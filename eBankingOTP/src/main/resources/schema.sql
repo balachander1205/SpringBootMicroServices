@@ -1,0 +1,8 @@
+DROP TABLE IF EXISTS TBL_OTP;
+ 
+CREATE TABLE TBL_OTP (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  otp VARCHAR(10) DEFAULT NULL,
+  createtime timestamp,
+  mobileno VARCHAR(30)
+);
