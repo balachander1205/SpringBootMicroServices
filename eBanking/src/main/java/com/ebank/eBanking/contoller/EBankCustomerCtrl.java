@@ -1,23 +1,20 @@
 package com.ebank.eBanking.contoller;
 
+import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import com.ebank.eBanking.model.*;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.web.bind.annotation.*;
 
-import com.ebank.eBanking.model.CustomerEntity;
-import com.ebank.eBanking.model.FundTransferModel;
-import com.ebank.eBanking.model.OTPModel;
-import com.ebank.eBanking.model.PayeeEntity;
 import com.ebank.eBanking.proxy.IFlightServProxy;
 import com.ebank.eBanking.proxy.IOtpProxy;
 import com.ebank.eBanking.service.CustomerService;
@@ -122,7 +119,7 @@ public class EBankCustomerCtrl {
 
 	@GetMapping("/greeting")
 	public String greeting() throws Exception {
-		Thread.sleep(10000);
+		//Thread.sleep(10000);
 		return "Welcome to eBanking";
 	}
 
@@ -160,5 +157,39 @@ public class EBankCustomerCtrl {
 		jsonObject.put("getIPAddr :: ", instance.getIPAddr());
 		System.out.println(jsonObject.toString());
 		return null;
+	}
+
+	@PostMapping("user")
+	public User login(@RequestParam("user") String username, @RequestParam("password") String pwd) {
+
+		String token = getJWTToken(username);
+		User user = new User();
+		user.setUser(username);
+		user.setPwd(pwd);
+		user.setToken(token);
+		return user;
+
+	}
+
+	private String getJWTToken(String username) {
+		String secretKey = "mySecretKey";
+		List<GrantedAuthority> grantedAuthorities = AuthorityUtils
+				.commaSeparatedStringToAuthorityList("ROLE_USER");
+
+		String token = Jwts
+				.builder()
+				.setId("softtekJWT")
+				.setSubject(username)
+				.claim("authorities",
+						grantedAuthorities.stream()
+								.map(GrantedAuthority::getAuthority)
+								.collect(Collectors.toList()))
+				.setIssuedAt(new Date(System.currentTimeMillis()))
+				.setExpiration(new Date(System.currentTimeMillis() + 60000))
+				.signWith(SignatureAlgorithm.HS512,
+						secretKey.getBytes()).compact();
+		System.out.println("Token "+token);
+
+		return "Bearer " + token;
 	}
 }
